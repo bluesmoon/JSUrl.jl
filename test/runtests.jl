@@ -18,9 +18,9 @@ function pt(v::AbstractArray, p)
 end
 
 function pt(v, p)
-    v = (ismissing(v) || isa(v, Function) || (isa(v, Number) && (isnan(v) || !isfinite(v)))) ? nothing : v
+    v = (ismissing(v) || isa(v, Function)) ? nothing : v
 
-    @test v == p
+    @test isequal(v, p)
 end
 
 function t(v, r)
@@ -41,9 +41,9 @@ end
     t(-1.5, "~-1.5")
     t("hello world\u203c", "~'hello*20world**203c")
     t(" !\"#abc\$%&'()*+,-./09:;<=>?@AZ[\\]^_`az{|}~", "~'*20*21*22*23abc!*25*26*27*28*29*2a*2b*2c-.*2f09*3a*3b*3c*3d*3e*3f*40AZ*5b*5c*5d*5e_*60az*7b*7c*7d*7e")
-    t(NaN, "~null")
-    t(Inf, "~null")
-    t(-Inf, "~null")
+    t(NaN, "~NaN")
+    t(Inf, "~Inf")
+    t(-Inf, "~-Inf")
 end
 @testset "arrays" begin
     t([], "~(~)")

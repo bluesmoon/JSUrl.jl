@@ -7,7 +7,7 @@ makedocs(
         edit_link="main",
     ),
     modules=[JSUrl],
-    pages = ["index.md"],
+    pages = ["index.md", "recipes.md"],
 )
 
 deploydocs(repo = "github.com/bluesmoon/JSUrl.jl.git")

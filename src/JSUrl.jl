@@ -16,12 +16,10 @@ Serialize a Julia object into a JSUrl string. This serialization is lossy as not
 
 To implement it for your own type, implement `show(::YourType)`.
 """
-stringify(v::Number) = isfinite(v) ? "~$(v)" : "~null"
-stringify(v::AbstractString) = "~'" * encode(v)
-stringify(v::AbstractChar)   = "~'" * encode(v)
-stringify(v::Nothing) = "~null"
-stringify(v::Missing) = "~null"
-stringify(v::AbstractArray) = "~(" * (isempty(v) ? "~" : join(map(stringify, v), "")) * ")"
+stringify(v::Number) = "~$(v)"
+stringify(v::Union{AbstractString, AbstractChar}) = "~'" * encode(v)
+stringify(v::Union{Nothing, Missing}) = "~null"
+stringify(v::Union{AbstractArray, Tuple, AbstractSet}) = "~(" * (isempty(v) ? "~" : join(map(stringify, collect(v)), "")) * ")"
 stringify(v::Tuple) = stringify(collect(v))
 stringify(v::AbstractDict)  = "~(" * join(filter(!isempty, map(k -> (val = stringify(v[k]); isnothing(val) ? "" : encode(k) * val), sort(collect(keys(v))))), "~") * ")"
 stringify(v::Pair) = stringify(Dict(v))
@@ -35,6 +33,8 @@ const reserved = Dict(
     "false" => false,
     "null"  => nothing,
     "fn"    => nothing,
+    "NaN"   => NaN,
+    "Inf"   => Inf,
 )
 
 """
@@ -127,7 +127,7 @@ function parse(s::AbstractString)
             i = something(findnext(c -> c === '~' || c === ')', s, i), len+1)
             sub = s[beg:i-1]
             if 0x2d <= codepoint(ch) <= 0x39   # digit or -
-                return Base.parse(occursin('.', sub) ? Float64 : Int, sub)
+                return sub == "-Inf" ? -Inf : Base.parse(occursin('.', sub) ? Float64 : Int, sub)
             elseif haskey(reserved, sub)
                 return reserved[sub]
             else
