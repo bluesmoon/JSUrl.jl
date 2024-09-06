@@ -1,10 +1,21 @@
+"""
+Julia implementation of [JSUrl](https://github.com/Sage/jsurl). See the JSURL docs for more details on the format.
+"""
 module JSUrl
 
+"""
+Encode a string type with JSUrl safe characters
+"""
 encode(ch::AbstractChar) = ch === '$' ? '!' : (ch = codepoint(ch); string(ch >= 0x100 ? "*" : "", "*", string(ch; base=16, pad=ch >= 0x100 ? 4 : 2)))
 encode(s::AbstractString) = replace(s, r"[^\w.-]"a => ch -> encode(ch[1]))
 encode(s::Symbol) = encode(string(s))
 
 
+"""
+Serialize a Julia object into a JSUrl string. This serialization is lossy as not all type information can be recovered.
+
+To implement it for your own type, implement `show(::YourType)`.
+"""
 stringify(v::Number) = isfinite(v) ? "~$(v)" : "~null"
 stringify(v::AbstractString) = "~'" * encode(v)
 stringify(v::AbstractChar)   = "~'" * encode(v)
@@ -18,6 +29,7 @@ stringify(v::NamedTuple) = stringify(Dict(pairs(v)))
 stringify(v::Function) = "~fn"
 stringify(v::Any) = stringify(Symbol(typeof(v)) => repr(v))
 
+#JSUrl reserved terms
 const reserved = Dict(
     "true"  => true,
     "false" => false,
@@ -25,7 +37,12 @@ const reserved = Dict(
     "fn"    => nothing,
 )
 
-parse(::Nothing) = nothing
+"""
+Parse a JSUrl serialized string into a Julia object.
+
+To deserialize your own type, look for a `Dict` with a single string key matching your typename.
+The value will be the output of `repr(::YourType)`
+"""
 function parse(s::AbstractString)
     isempty(s) && return s
 
